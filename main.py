@@ -1,127 +1,217 @@
-# import random
-# from random import randint
+from flask import Flask
+from mysql.connector import connect
 
 
-# print("Entrez une valeur")
-# compteur = int(input())
-# for i in range(compteur):
-#     print(i)
+app = Flask(__name__)
 
-# print("Entrez une valeur")
-# compteur = int(input())
-# for i in range(11):   
-#     print(i * compteur)
+# dictionary containing the database configuration
+db_config = { 
+    "host": "localhost",
+    "user": "root",
+    "password": "root",
+    "database": "france"
+}
 
-
-# for i in range(1,21):
-#     print(i)
-
-#     if (i % 3 == 0 )and (i % 5 == 0):
-#         print("FizzBuzz")
-
-#     elif i % 3 == 0:
-#         print("Fizz")
-
-#     elif i % 5 == 0:
-#         print("Buzz")
+# route to the home page
+@app.route("/")
+def index():
+    return"<h1>Hello, World!</h1>"
 
 
-# print(random.randint(1, 100))
+#GET /api/departements : Récupérer tous les départements.
+@app.route("/api/departements")
+def get_departements():
+    # connect to the database
+    # **db_config sert à mettre les valeurs de db_config dans les paramètres de connect c"est à dire host, user, password, database.
+    connection = connect(**db_config)
+
+    # le cursor permet de faire des requêtes, en gros c"est un objet qui permet de faire des requêtes
+    cursor = connection.cursor(dictionary=True)
 
 
-# try:
-#     for i in range(5):
-#         print("entrez une valeur")
-#         int(input())
-#         continue
-# except:
-#     print('Erreur sauvage')
+    # execute the query
+    cursor.execute("SELECT * FROM departement")
+
+    # fetch the results, c"est à dire récupérer les résultats, fetch en français signifie récupérer
+    departements = cursor.fetchall()
+
+    # close the connection
+    cursor.close()
+    connection.close()
 
 
-# banane = { "one": 1, "two": 5 }
-
-# banane["five"] = 18
-
-# print(banane["five"])
-# print(banane.get("five"))
+    # return the departments as a JSON object
+    return departements 
 
 
-# from flask import Flask, request
+# GET /api/departements/{id} : Récupérer un département par son ID.
+@app.route("/api/departements/<int:departement_id>")
+def get_departement(departement_id):
+    connection = connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM departement WHERE departement_id = %s", (departement_id,))
+    departement = cursor.fetchone()
+    cursor.close()
+    connection.close()
+    if departement:
+        return {"departement": departement}
+    else:
+        return {"error": "Département non trouvé"}, 404
 
-# app = Flask(__name__)
+# GET /api/departements/code/{code} : Récupérer un département par son code.
+@app.route("/api/departements/code/<string:departement_code>")
+def get_departement_by_code(departement_code):
+    connection = connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM departement WHERE departement_code = %s", (departement_code,))
+    departement = cursor.fetchone()
+    cursor.close()
+    connection.close()
+    if departement:
+        return {"departement": departement}
+    else:
+        return {"error": "Département non trouvé"}, 404
 
-# data = [
-# 	{ "id": 1, "nom": "Pickles", "prenom": "Angelica", "ville": "Cesson-Sévigné" },
-# 	{ "id": 2, "nom": "Pickles", "prenom": "Tommy", "ville": "Saint-Grégoire" },
-# 	{ "id": 3, "nom": "Finster", "prenom": "Chuckie", "ville": "Betton" },
-# 	{ "id": 4, "nom": "DeVille", "prenom": "Phil", "ville": "Chantepie" },
-# 	{ "id": 5, "nom": "DeVille", "prenom": "Lil", "ville": "Pacé" },
-# 	{ "id": 6, "nom": "Carmichael", "prenom": "Susie", "ville": "Vezin-le-Coquet" }
-# ]
+# GET /api/departements/nom/{nom} : Récupérer un département par son nom.
+@app.route("/api/departements/nom/<string:departement_nom>")
+def get_departement_by_nom(departement_nom):
+    connection = connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM departement WHERE departement_nom  = %s", (departement_nom,))
+    departement = cursor.fetchone()
+    cursor.close()
+    connection.close()
+    if departement:
+        return {"departement": departement}
+    else:
+        return {"error": "Département non trouvé"}, 404
 
-# @app.route('/')
-# def index():
-#     return "<h1>Hello World!</h1>"
-
-# @app.route('/users/<int:user_id>')
-# def users(user_id):
-#     for row in data:
-#         if row["id"]==user_id:
-#             return row
-#     return "Not Found"
-
-
-# @app.route('/users')
-# def fetch_users():
-    
-#     query_params = request.args.to_dict()
-#     print(query_params)
-
-#     results = []
-#     if len(request.args) == 0: return data
-#     for row in data:
-#         Permet de caster id  de data en string
-#         row['id'] = str(row['id'])
-#         La flèche <= permet de vérifier que le dictionnaire de paramètre est contenu dans notre ligne
-#         La "flèche" que tu mentionnes est en fait un opérateur de comparaison d'ensembles en Python, 
-#         et il s'agit de l'opérateur <=. Cet opérateur est utilisé pour vérifier si un ensemble est un sous-ensemble d'un autre ensemble.
-#         if query_params.items() <= row.items():
-#             results.append(row)
-#     return results
-
-
-
-# @app.route('/chat')
-# def chat():
-#     query_params = request.args.to_dict()
-#     print(query_params)
-    
-#     Si aucun paramètre n'est passé, renvoyer toutes les données
-#     if not query_params:
-#         return str(data)
-
-#     results = []
-#     for row in data:
-#         match = True
-#         for key, value in query_params.items():
-#             if key not in row or str(row[key]) != value:
-#                 match = False
-#                 break
-#         if match:
-#             results.append(row)
-    
-#     if results:
-#         return str(results)
-#     else:
-#         return "Aucun résultat trouvé", 404
+# GET /api/villes/nom/{nom} : Récupérer toutes les villes par nom.
+@app.route("/api/villes/nom/<string:ville_nom>")
+def get_villes_by_nom(ville_nom):
+    db = None
+    cursor = None
+    try:
+        db = connect(**db_config)
+        cursor = db.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM villes_france_free WHERE ville_nom = %s", [ville_nom])
+        resultat = cursor.fetchall()
+        return resultat
+    except:
+        return f"Une erreur sauvage est apparue"
+    finally:
+        if cursor:
+            cursor.close()
+        if db:
+            db.close()
     
 
+    
+# GET /api/villes/code_postal/{code_postal} : Récupérer toutes les villes par code postal.
+# @app.route("/api/villes/code_postal/<string:code_postal>")
+# def get_villes_by_code_postal(code_postal):
+#     connection = connect(**db_config)
+#     cursor = connection.cursor(dictionary=True)
+#     #cursor.execute("SELECT * FROM villes_france_free WHERE ville_code_postal = %s", (code_postal,))
+#     #ou
+#     #cursor.execute("SELECT * FROM villes_france_free WHERE ville_code_postal LIKE %s", (code_postal,))
+#     villes = cursor.fetchall()
+#     cursor.close()
+#     connection.close()
+#     return str(villes)
 
-# @app.route('/profil/<user>')
-# def profil(user):
-#     return f"<p>Profile de {user}</p>"
 
-# @app.route('/search')
-# def recherche():
-#     q = request.args.get('q', default="")
-#     return f"On recherche {q}"
+# Récupérer les villes par code postal.
+@app.route("/api/villes/code_postal/<string:code_postal>")
+def get_villes_by_code_postal(code_postal):
+    db = connect(**db_config)
+    cursor = db.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM villes_france_free WHERE ville_code_postal LIKE %s", [code_postal+"%"])
+    resultat = cursor.fetchall()
+    cursor.close()
+    db.close()
+    return resultat
+
+
+
+# GET /api/villes/population/{annee}/{population} : Récupérer toutes les villes par population.
+# @app.route("/api/villes/population/<int:annee>/<int:population>")
+# def get_villes_by_population(annee, population):
+#     column_name = f"ville_population_{annee}"
+#     query = f"SELECT * FROM villes_france_free WHERE {column_name} >= %s"
+#     connection = connect(**db_config)
+#     cursor = connection.cursor(dictionary=True)
+#     cursor.execute(query, (population,))
+#     villes = cursor.fetchall()
+#     cursor.close()
+#     connection.close()
+#     return str(villes)
+
+
+
+# Récupérer les villes avec une population supérieure ou égale à une valeur spécifiée pour l'année spécifiée.
+@app.route("/api/villes/population/<int:annee>/<int:population>")
+def get_villes_by_population_for_year(annee, population):
+    if annee not in [1999, 2010, 2012]:
+        return "Nous n'avons que les données pour les années : 1999, 2010 et 2012"
+    db = connect(**db_config)
+    cursor = db.cursor(dictionary=True)
+    cursor.execute(f"SELECT * FROM villes_france_free WHERE ville_population_%s >= %s", [annee, population])
+    resultat = cursor.fetchall()
+    cursor.close()
+    db.close()
+    return resultat
+
+
+
+# GET /api/villes : Récupérer les 10 premières villes.
+@app.route("/api/villes")
+def get_villes():
+    try :
+        connection = connect(**db_config)
+        cursor = connection.cursor(dictionary=True)
+        cursor.execute("SELECT * FROM villes_france_free LIMIT 10")
+        villes = cursor.fetchall()
+        return str(villes)
+    except Exception as e:
+        return f"Erreur : {e}"
+    finally:
+        cursor.close()
+        connection.close()  
+
+
+
+# GET /api/villes/{id} : Récupérer une ville par son ID.
+@app.route("/api/villes/<int:ville_id>")
+def get_ville_by_id(ville_id):
+    connection = connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM villes_france_free WHERE ville_id = %s", (ville_id,))
+    ville = cursor.fetchone()
+    cursor.close()
+    connection.close()
+    if ville:
+        return str(ville)
+    else:
+        return "Ville non trouvée", 404
+
+# GET /api/villes/departement/{code} : Récupérer toutes les villes par département.
+@app.route("/api/villes/departement/<string:departement_code>")
+def get_villes_by_departement_code(departement_code):
+    connection = connect(**db_config)
+    cursor = connection.cursor(dictionary=True)
+    cursor.execute("SELECT * FROM villes_france_free WHERE ville_departement = %s", (departement_code,))
+    villes = cursor.fetchall()
+    cursor.close()
+    connection.close()
+    return str(villes)
+
+
+
+
+#http://127.0.0.1:5000/
+#flask --app server run : pour lancer le serveur avec flask
+# commande pour activer l"environnement virtuel : source ./bin/activate  
+# commande pour désactiver l"environnement virtuel : deactivate
+# commande pour installer flask : pip install flask
+
